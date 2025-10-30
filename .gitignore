@@ -1,0 +1,103 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# API Keys and Environment Files
+OPENAI_API_KEY.env
+.env
+*.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and Results
+logs/
+*.log
+simulation_results*/
+results/
+output/
+experiments/
+
+# Temporary Files
+temp/
+tmp/
+*.tmp
+*.bak
+*.backup
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyCharm
+.idea/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Large Data Files (optional - consider if you want to version control these)
+# users_data/*.csv
+
+# Job/SLURM Output Files
+*.out
+*.err
+slurm-*.out
+
+# Backup directories
+backup_*/
+
+# Cleanup utilities (optional - comment out if you want to version control these)
+cleanup_redundant_files.sh 
