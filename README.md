@@ -1,4 +1,4 @@
-# LLM Election Simulation
+# LLM Social-Political Mobilization
 
 This project implements a social network of LLM agents for running experiments measuring the effect of message nudges on voting behavior.
 
@@ -63,7 +63,7 @@ bash run_all_stages.sh --n_users 20000 --n_cores 100 --batch_size 500
 
 ## Large-Scale Simulations
 
-The simulation now includes memory monitoring and batch processing capabilities for running large-scale experiments:
+The simulation includes memory monitoring and batch processing capabilities for running large-scale experiments:
 
 1. **Batch Processing**: Users are processed in batches to manage memory usage. For large simulations (e.g., 20,000 users), consider using a batch size of 500-1000.
 
