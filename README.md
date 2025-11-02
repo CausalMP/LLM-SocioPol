@@ -1,6 +1,19 @@
 # LLM Social-Political Mobilization
 
-This project implements a social network of LLM agents for running experiments measuring the effect of message nudges on voting behavior.
+An open-source Python software for simulating LLM-based social networks to study causal effects of social influence on voting behavior, including data from five independent experimental runs.
+
+## Citation
+
+If you use this code or data in your research, please cite:
+
+```bibtex
+@article{shirani2025simulating,
+  title={Simulating and Experimenting with Social Media Mobilization Using LLM Agents},
+  author={Shirani, Sadegh and Bayati, Mohsen},
+  journal={arXiv preprint arXiv:2510.26494},
+  year={2025}
+}
+```
 
 ## Overview
 
