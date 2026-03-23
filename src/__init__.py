@@ -27,7 +27,7 @@ from src.config import (
 )
 
 # Global config parameters used in the original main.py
-DEFAULT_MODEL = 'gpt-4.1-nano'
+# DEFAULT_MODEL is imported from src.config above (provider-aware)
 rate_41nano = 1.00
 rate_41mini = 0.00
 rate_41 = 0.00

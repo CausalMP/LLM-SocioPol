@@ -18,16 +18,24 @@
 # Get the directory of the script
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Load API key from file
+# Load OpenAI API key from file (optional — only needed for --provider openai)
 if [ -f "$DIR/OPENAI_API_KEY.env" ]; then
-    # Extract just the key value (without export, quotes, etc.)
     OPENAI_API_KEY=$(grep -o 'OPENAI_API_KEY=[^"]*' "$DIR/OPENAI_API_KEY.env" | cut -d'=' -f2)
     export OPENAI_API_KEY
-    echo "API key loaded from OPENAI_API_KEY.env"
+    echo "OpenAI API key loaded from OPENAI_API_KEY.env"
     echo "Key (truncated): ${OPENAI_API_KEY:0:10}...${OPENAI_API_KEY: -5}"
 else
-    echo "OPENAI_API_KEY.env file not found"
-    exit 1
+    echo "OPENAI_API_KEY.env file not found (ok if using --provider anthropic)"
+fi
+
+# Load Anthropic API key from file (optional — only needed for --provider anthropic)
+if [ -f "$DIR/ANTHROPIC_API_KEY.env" ]; then
+    ANTHROPIC_API_KEY=$(grep -o 'ANTHROPIC_API_KEY=[^"]*' "$DIR/ANTHROPIC_API_KEY.env" | cut -d'=' -f2)
+    export ANTHROPIC_API_KEY
+    echo "Anthropic API key loaded from ANTHROPIC_API_KEY.env"
+    echo "Key (truncated): ${ANTHROPIC_API_KEY:0:10}...${ANTHROPIC_API_KEY: -5}"
+else
+    echo "ANTHROPIC_API_KEY.env file not found (ok if using --provider openai)"
 fi
 
 # Check for required Python packages
@@ -59,6 +67,7 @@ if [[ "$*" == *"--help"* ]]; then
   echo "  --output_dir DIR       Output directory (default: 'simulation_results')"
   echo "  --n_cores N            Number of CPU cores (default: 8)"
   echo "  --batch_size N         Number of users to process in one batch (default: 500)"
+  echo "  --provider STR         LLM provider: openai or anthropic (default: openai)"
   echo "  --skip_warmup          Skip warmup stage if already run"
   echo "  --skip_main            Skip main stages"
   exit 0
@@ -72,6 +81,7 @@ FEED_LENGTH=4
 N_CORES=8
 BATCH_SIZE=500
 OUTPUT_DIR="simulation_results"
+PROVIDER="openai"
 SKIP_WARMUP=false
 SKIP_MAIN=false
 N_RUNS=1
@@ -111,6 +121,10 @@ while [[ $# -gt 0 ]]; do
       SKIP_WARMUP=true
       shift
       ;;
+    --provider)
+      PROVIDER="$2"
+      shift 2
+      ;;
     --skip_main)
       SKIP_MAIN=true
       shift
@@ -131,6 +145,7 @@ echo "  Feed length: $FEED_LENGTH"
 echo "  Output directory: $OUTPUT_DIR"
 echo "  Number of CPU cores: $N_CORES"
 echo "  Batch size: $BATCH_SIZE"
+echo "  LLM provider: $PROVIDER"
 
 # Calculate recommended batch size for large simulations
 if [ "$N_USERS" -gt 1000 ]; then
@@ -212,7 +227,8 @@ if [ "$SKIP_WARMUP" = false ]; then
     --feed_length "$FEED_LENGTH" \
     --output_dir "$OUTPUT_DIR" \
     --n_cores "$N_CORES" \
-    --batch_size "$BATCH_SIZE" 2>&1 | tee -a "$WARMUP_LOG"
+    --batch_size "$BATCH_SIZE" \
+    --provider "$PROVIDER" 2>&1 | tee -a "$WARMUP_LOG"
     
   # Check if warmup completed successfully
   if [ $? -ne 0 ]; then
@@ -263,7 +279,8 @@ if [ "$SKIP_MAIN" = false ]; then
     --warmup_dir "$WARMUP_DIR" \
     --output_dir "$OUTPUT_DIR" \
     --n_cores "$N_CORES" \
-    --batch_size "$BATCH_SIZE" 2>&1 | tee -a "$MAIN_LOG"
+    --batch_size "$BATCH_SIZE" \
+    --provider "$PROVIDER" 2>&1 | tee -a "$MAIN_LOG"
     
   # Check if main stages completed successfully
   if [ $? -ne 0 ]; then

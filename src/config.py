@@ -6,10 +6,26 @@ Configuration parameters for the election simulation.
 n_runs = 1
 
 # LLM model settings
-DEFAULT_MODEL = 'gpt-4.1-nano'  # Use the appropriate model
-rate_41nano = 0.98
-rate_41mini = 0.016
-rate_41 = 0.004
+MODEL_PROVIDER = 'openai'  # 'openai' or 'anthropic' — set via --provider CLI arg
+
+MODEL_TIERS = {
+    "openai": {"low": "gpt-4.1-nano", "mid": "gpt-4.1-mini", "high": "gpt-4.1"},
+    "anthropic": {"low": "claude-haiku-4-5-20251001", "mid": "claude-sonnet-4-6", "high": "claude-opus-4-6"},
+}
+
+def get_default_model():
+    return MODEL_TIERS[MODEL_PROVIDER]["low"]
+
+DEFAULT_MODEL = get_default_model()
+
+# Tier probabilities (provider-agnostic)
+rate_low = 0.98
+rate_mid = 0.016
+rate_high = 0.004
+# Backward-compat aliases
+rate_41nano = rate_low
+rate_41mini = rate_mid
+rate_41 = rate_high
 llm_temperature = 0.5       # Temperature for LLM calls (0.0-1.0, lower = more deterministic)
 context_history_length = 1   # How many of the past feeds the API keeps in context
 content_gen_prob = 0.01      # Chance of each user generating a new piece of content each round

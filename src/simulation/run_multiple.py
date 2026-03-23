@@ -174,7 +174,7 @@ def main():
     parser.add_argument('--num_contents', type=int, default=20, help='Number of content pieces')
     parser.add_argument('--feed_length', type=int, default=4, help='Feed length')
     parser.add_argument('--topic', type=str, default='Politics', help='Topic string')
-    parser.add_argument('--model', type=str, default='gpt-4.1-nano', help='LLM model to use')
+    parser.add_argument('--model', type=str, default=None, help='LLM model to use (default: from config/provider)')
     parser.add_argument('--n_cores', type=int, default=4, help='Number of CPU cores to use for parallel processing. If not specified, uses all available cores.')
     parser.add_argument('--random_seed', type=int, default=42, help='Random seed for general simulation randomness')
     parser.add_argument('--treatment_seed', type=int, default=None, help='Random seed for treatment allocation only. If not specified, uses random_seed')

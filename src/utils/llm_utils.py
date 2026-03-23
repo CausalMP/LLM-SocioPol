@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple, Optional, Any
 from openai import OpenAI
 from anthropic import Anthropic
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from src import config
 from src.config import llm_temperature  # Import temperature from config
 
 # Get API keys with better fallback mechanisms
@@ -32,7 +33,6 @@ def get_api_key(key_name, file_path=None):
 # Initialize clients with API keys
 OPENAI_API_KEY = get_api_key('OPENAI_API_KEY', './OPENAI_API_KEY.env')
 if not OPENAI_API_KEY:
-    # Try looking for OPENAI_API_KEY.env in current directory
     api_key_files = ['./OPENAI_API_KEY.env', './.env', '../OPENAI_API_KEY.env']
     for file_path in api_key_files:
         if os.path.exists(file_path):
@@ -40,14 +40,20 @@ if not OPENAI_API_KEY:
             if OPENAI_API_KEY:
                 break
 
-if not OPENAI_API_KEY:
-    raise ValueError("Please set the OPENAI_API_KEY environment variable or create an OPENAI_API_KEY.env file")
+ANTHROPIC_API_KEY = get_api_key('ANTHROPIC_API_KEY', './ANTHROPIC_API_KEY.env')
+if not ANTHROPIC_API_KEY:
+    api_key_files = ['./ANTHROPIC_API_KEY.env', './.env', '../ANTHROPIC_API_KEY.env']
+    for file_path in api_key_files:
+        if os.path.exists(file_path):
+            ANTHROPIC_API_KEY = get_api_key('ANTHROPIC_API_KEY', file_path)
+            if ANTHROPIC_API_KEY:
+                break
 
-ANTHROPIC_API_KEY = get_api_key('ANTHROPIC_API_KEY')  # Optional
 LLAMA_MODEL_PATH = "path/to/llama/model"  # Replace with your path
 
-oai = OpenAI(api_key=OPENAI_API_KEY.strip())
-ant = Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
+# Only initialize the client we actually need (lazy — checked at generation time)
+oai = OpenAI(api_key=OPENAI_API_KEY.strip()) if OPENAI_API_KEY else None
+ant = Anthropic(api_key=ANTHROPIC_API_KEY.strip()) if ANTHROPIC_API_KEY else None
 
 class LLMAdapter:
     def generate(self, messages: List[Dict[str, str]], model: str, temperature: float = llm_temperature, max_tokens: int = 1000) -> str:
@@ -55,6 +61,8 @@ class LLMAdapter:
 
 class OpenAIAdapter(LLMAdapter):
     def generate(self, messages: List[Dict[str, str]], model: str, temperature: float = llm_temperature, max_tokens: int = 1000) -> str:
+        if oai is None:
+            raise ValueError("OpenAI client not initialized — set OPENAI_API_KEY or use --provider anthropic")
         try:
             response = oai.chat.completions.create(
                 model=model,
@@ -69,6 +77,8 @@ class OpenAIAdapter(LLMAdapter):
 
 class ClaudeAdapter(LLMAdapter):
     def generate(self, messages: List[Dict[str, str]], model: str, temperature: float = llm_temperature, max_tokens: int = 1000) -> str:
+        if ant is None:
+            raise ValueError("Anthropic client not initialized — set ANTHROPIC_API_KEY or use --provider openai")
         try:
             response = ant.messages.create(
                 model=model,
@@ -106,8 +116,8 @@ def get_llm_client(model_type: str) -> LLMAdapter:
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
 
-def gen_completion(messages: List[Dict[str, str]], 
-                  model: str = "gpt-4.1-nano", 
+def gen_completion(messages: List[Dict[str, str]],
+                  model: str = None,
                   temperature: float = llm_temperature,
                   max_tokens: int = 1000,
                   max_retries: int = 3,
@@ -126,6 +136,8 @@ def gen_completion(messages: List[Dict[str, str]],
     Returns:
         Generated text
     """
+    if model is None:
+        model = config.DEFAULT_MODEL
     retry_count = 0
     while retry_count <= max_retries:
         try:
@@ -144,7 +156,7 @@ def gen_completion(messages: List[Dict[str, str]],
                 # Increase delay for next retry (exponential backoff)
                 retry_delay *= 1.5
 
-def simple_gen(prompt: str, model: str = "gpt-4.1-nano", temperature: float = llm_temperature) -> str:
+def simple_gen(prompt: str, model: str = None, temperature: float = llm_temperature) -> str:
     messages = [{"role": "user", "content": prompt}]
     return gen_completion(messages, model, temperature)
 
@@ -219,9 +231,9 @@ def parse_json(response: str, target_keys: Optional[List[str]] = None) -> Dict:
             parsed = {key: parsed.get(key, "") for key in target_keys}
         return parsed
 
-def mod_gen(modules: List[Dict], placeholders: Dict, 
+def mod_gen(modules: List[Dict], placeholders: Dict,
             target_keys: Optional[List[str]] = None,
-            model: str = "gpt-4.1-nano") -> Dict:
+            model: str = None) -> Dict:
     prompt = modular_instructions(modules)
     filled = fill_prompt(prompt, placeholders)
     response = simple_gen(filled, model)

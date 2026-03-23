@@ -9,7 +9,8 @@ from typing import Dict, List, Tuple, Any, Optional
 
 # Import from config module
 from src.config import (
-    DEFAULT_MODEL, rate_41nano, rate_41mini, rate_41,
+    DEFAULT_MODEL, rate_low, rate_mid, rate_high,
+    MODEL_TIERS, MODEL_PROVIDER,
     PATH_TO_DEMOGRAPHC_DATA, PATH_TO_USER_DATA
 )
 
@@ -118,52 +119,57 @@ def load_profiles_and_network(n_users=None, random_seed=None):
 def calculate_model_probabilities(education, occupation, age):
     """
     Calculate probabilities for different models based on user characteristics.
-    Returns a dictionary of model:probability pairs.
+    Returns a dictionary of model:probability pairs using tier-based keys
+    resolved to the active provider's model names.
     """
-    # Base probabilities
+    from src import config  # fresh read so --provider mutations are visible
+
+    tier_map = config.MODEL_TIERS[config.MODEL_PROVIDER]
+
+    # Base probabilities per tier
     probs = {
-        'gpt-4.1-nano': rate_41nano,
-        'gpt-4.1-mini': rate_41mini,
-        'gpt-4.1': rate_41
+        'high': rate_high,
+        'mid': rate_mid,
+        'low': rate_low,
     }
-    
+
     # Adjust probabilities based on education level
     if education in ['Doctorate']:
-        probs['gpt-4.1'] *= 3.0
-        probs['gpt-4.1-mini'] *= 1.5
-        probs['gpt-4.1-nano'] *= 0.5
+        probs['high'] *= 3.0
+        probs['mid'] *= 1.5
+        probs['low'] *= 0.5
     elif education in ['Masters']:
-        probs['gpt-4.1'] *= 2.0
-        probs['gpt-4.1-mini'] *= 1.3
-        probs['gpt-4.1-nano'] *= 0.7
+        probs['high'] *= 2.0
+        probs['mid'] *= 1.3
+        probs['low'] *= 0.7
     elif education in ['Bachelors']:
-        probs['gpt-4.1'] *= 1.5
-        probs['gpt-4.1-mini'] *= 1.2
-        probs['gpt-4.1-nano'] *= 0.8
-    
+        probs['high'] *= 1.5
+        probs['mid'] *= 1.2
+        probs['low'] *= 0.8
+
     # Adjust probabilities based on occupation
     if any(term in occupation.lower() for term in ['professor', 'researcher', 'scientist', 'engineer', 'analyst']):
-        probs['gpt-4.1'] *= 2.0
-        probs['gpt-4.1-mini'] *= 1.3
-        probs['gpt-4.1-nano'] *= 0.7
+        probs['high'] *= 2.0
+        probs['mid'] *= 1.3
+        probs['low'] *= 0.7
     elif any(term in occupation.lower() for term in ['manager', 'director', 'specialist', 'consultant']):
-        probs['gpt-4.1'] *= 1.5
-        probs['gpt-4.1-mini'] *= 1.2
-        probs['gpt-4.1-nano'] *= 0.8
-    
+        probs['high'] *= 1.5
+        probs['mid'] *= 1.2
+        probs['low'] *= 0.8
+
     # Adjust probabilities based on age (older users tend to be more experienced)
     if age >= 40:
-        probs['gpt-4.1'] *= 1.5
-        probs['gpt-4.1-mini'] *= 1.2
-        probs['gpt-4.1-nano'] *= 0.8
+        probs['high'] *= 1.5
+        probs['mid'] *= 1.2
+        probs['low'] *= 0.8
     elif age >= 30:
-        probs['gpt-4.1'] *= 1.3
-        probs['gpt-4.1-mini'] *= 1.1
-        probs['gpt-4.1-nano'] *= 0.9
-    
-    # Normalize probabilities
+        probs['high'] *= 1.3
+        probs['mid'] *= 1.1
+        probs['low'] *= 0.9
+
+    # Normalize and resolve tier names → actual model names
     total = sum(probs.values())
-    return {model: prob/total for model, prob in probs.items()}
+    return {tier_map[tier]: prob / total for tier, prob in probs.items()}
 
 def assign_persona_to_model(persona, demos_to_include):
     """

@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from src.simulation.simulation import run_simulation, log_memory_usage
 from src.simulation.simulation_utils import save_population_summary
+from src import config
 from src.config import warmup_periods, random_seed, treatment_seed, time_points
 
 def main():
@@ -22,8 +23,15 @@ def main():
     parser.add_argument('--output_dir', type=str, default='simulation_results', help='Directory to save outputs')
     parser.add_argument('--n_cores', type=int, default=8, help='Number of CPU cores to use for parallel processing')
     parser.add_argument('--batch_size', type=int, default=1000, help='Number of users to process in one batch')
-    
+    parser.add_argument('--provider', type=str, choices=['openai', 'anthropic'], default='openai',
+                        help='LLM provider: openai or anthropic (default: openai)')
+
     args = parser.parse_args()
+
+    # Set the provider before anything touches config.DEFAULT_MODEL
+    config.MODEL_PROVIDER = args.provider
+    config.DEFAULT_MODEL = config.get_default_model()
+    print(f"Using LLM provider: {args.provider} (default model: {config.DEFAULT_MODEL})")
     
     # Print system information
     print(f"Total system memory: {psutil.virtual_memory().total / (1024**3):.2f} GB")
